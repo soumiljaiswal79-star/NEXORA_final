@@ -1,0 +1,29 @@
+{
+  "summary": "Iteration 7 validates the two new frontend-only features (client-side vehicle animation and CNN evidence panel). Backend regression: 11/11 pytest tests still pass (GET /api/ returns 'NEXORA API online', /api/overview contract unchanged, calibration payload with 7 features + xgb-1.0.0 version, /api/reports.cnn payload unchanged). Frontend: header reads 'NEXORA'. Vehicle animation: over a ~4s window, 5/19 vehicle-marker SVG paths changed their `d` attribute (spec required >=3), no console errors or leaflet errors during a 20s window. Nagaland state filter narrows to 4 vehicle markers on the map. CNN evidence panel is absent from DOM on initial load. After submitting a field report with a synthetic dark-gradient JPEG the panel appears with (a) cnn-evidence-photo with a data:image/jpeg base64 src, (b) cnn-evidence-severity badge ('None 18.1' — CNN returned low severity for the synthetic image, which matches MobileNetV2 behaviour), (c) exactly 3 .cnn-class children in cnn-evidence-topclasses, (d) 3 sub-features (edge density, dark ratio, damage prob). Submitting a second red image replaces the panel content (photo src differs). Clicking cnn-evidence-clear (X) removes the panel from the DOM. EN/Assamese toggle, alt-route switcher, bottleneck panel, and model-meta (rule_risk / ±3.84 / 675 rows) all still work.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ne_logix_api.py",
+    "/app/test_reports/pytest/pytest_iteration7.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "App.js is now a single 70-line file with most JSX collapsed onto very long single lines (line 48 is ~7 kB). Readability is poor; consider breaking Home into MapPanel / SideColumn / BottomGrid components for future maintenance.",
+    "The `tick` interval (700ms) runs even when the tab is hidden and never pauses on unmount errors. Fine for demo, but worth a visibility-change guard for production.",
+    "animatedVehicles recomputes for all 6 vehicles every tick even when route.points arrays are static — memoising per-vehicle position by (routeId, tick) would trim work but current volume (6 vehicles) makes this negligible.",
+    "The two console warnings observed are from the Emergent preview tool's `x-ve-dynamic` `<span>` injected inside <option> elements — NOT from application code. Ignore.",
+    "readImage() still does not client-side resize before base64 upload (carry-over from iteration 6)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (animation, CNN panel show/replace/dismiss, filter, toggle, switcher, bottleneck, model-meta all verified)"},
+  "test_credentials": "none required",
+  "seed_data_creation": "Two field reports submitted during UI test (Assam Landslide High with dark-gradient synthetic JPEG; Assam Landslide High with red synthetic JPEG). Mutated in-memory fixtures — restart backend before absolute-risk assertions.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Vehicle animation uses ping-pong along route.points every 700ms via `tick` state; delivered vehicles (V-061) hold vehicle.position. CNN panel state (`lastCNN`) is captured client-side from response.cnn when used===true; panel is dismissible and replaced on next successful image submit. Backend was NOT changed this iteration — the same test_ne_logix_api.py suite covers it. Synthetic solid-color JPEGs will produce cnn.severity 'None' with low score; use noisy dark JPEGs for higher severities.",
+  "rca of the issue": "No bugs found. Both new features work as specified."
+}
